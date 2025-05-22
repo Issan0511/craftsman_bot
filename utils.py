@@ -1,4 +1,5 @@
-import os, httpx, openai, asyncio, hmac, hashlib, base64
+import os, httpx, asyncio, hmac, hashlib, base64
+from openai import AsyncOpenAI
 from linebot.v3.messaging import (
     ApiClient, Configuration, MessagingApi,
     ReplyMessageRequest, PushMessageRequest, TextMessage
@@ -7,7 +8,9 @@ from linebot.v3.messaging.exceptions import ApiException
 from dotenv import load_dotenv
 
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+
+client = AsyncOpenAI()
+
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
 cfg = Configuration(access_token=os.getenv("LINE_ACCESS_TOKEN"))
@@ -43,7 +46,7 @@ async def reply_or_push(user_id: str, reply_token: str, text: str):
 async def call_gpt_stream(user_msg: str) -> str:
     """OpenAI ChatCompletion をストリーム受信して結合"""
     chunks = []
-    stream = await openai.chat.completions.async_create(
+    stream = await client.chat.completions.create(
         model=OPENAI_MODEL,
         stream=True,
         messages=[{"role": "user", "content": user_msg}],
