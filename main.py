@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, BackgroundTasks, HTTPException
 from utils import (
-    verify_signature, show_loading, call_gpt_stream, reply_or_push, os
+    verify_signature, show_loading, call_gpt_block, reply_or_push, os
 )
 
 app = FastAPI()
@@ -27,7 +27,7 @@ async def webhook(req: Request, bg: BackgroundTasks):
 
         # 2) GPT 呼び出し & 返信 / プッシュ
         async def async_flow():
-            answer = await call_gpt_stream(text)
+            answer = await call_gpt_block(uid, text) # uid を call_gpt_block に渡す
             await reply_or_push(uid, token, answer)
 
         bg.add_task(async_flow)

@@ -6,12 +6,16 @@ from linebot.v3.messaging import (
 )
 from linebot.v3.messaging.exceptions import ApiException
 from dotenv import load_dotenv
+import collections # collections をインポート
 
 load_dotenv()
 
 client = AsyncOpenAI()
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+MAX_HISTORY_LENGTH = 5  # 保存する履歴の最大数
+chat_histories = collections.defaultdict(lambda: collections.deque(maxlen=MAX_HISTORY_LENGTH)) # チャット履歴を保存する辞書
+system_prompts = collections.defaultdict(lambda: "")  # ユーザーごとのシステムプロンプト
 
 line_access_token = os.getenv("LINE_ACCESS_TOKEN")
 if line_access_token is None:
@@ -49,23 +53,59 @@ async def reply_or_push(user_id: str, reply_token: str, text: str):
                 raise
 
 # -- GPT --------------------------------------------------------------
-async def call_gpt_stream(user_msg: str) -> str:
-    """OpenAI ChatCompletion をストリーム受信して結合"""
+async def call_gpt_stream(user_id: str, user_msg: str) -> str:
+    """OpenAI ChatCompletion をストリーム受信して結合（システムプロンプト対応）"""
     chunks = []
+    current_history = list(chat_histories[user_id])
+    system_prompt = system_prompts[user_id]
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages += current_history + [{"role": "user", "content": user_msg}]
+
     stream = await client.chat.completions.create(
         model=OPENAI_MODEL,
         stream=True,
-        messages=[{"role": "user", "content": user_msg}],
+        messages=messages, # 履歴を考慮したメッセージリスト
         max_tokens=1024,
         temperature=0.8,
     )
     async for part in stream:
         delta = part.choices[0].delta
         if delta and delta.content:
-            chunks.append(delta.content)
-    return "".join(chunks)
+            chunks.append(delta.content) # 修正: delta.content を直接追加
+            
+    bot_response = "".join(chunks)
+    # ユーザーのメッセージとボットの応答を履歴に追加
+    chat_histories[user_id].append({"role": "user", "content": user_msg})
+    chat_histories[user_id].append({"role": "assistant", "content": bot_response})
+    return bot_response
+
+async def call_gpt_block(user_id: str, user_msg: str) -> str:
+    """OpenAI ChatCompletion をブロッキングで受信（システムプロンプト対応）"""
+    current_history = list(chat_histories[user_id])
+    system_prompt = system_prompts[user_id]
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages += current_history + [{"role": "user", "content": user_msg}]
+
+    response = await client.chat.completions.create(
+        model=OPENAI_MODEL,
+        messages=messages,
+        max_tokens=1024,
+        temperature=0.8,
+    )
+    bot_response = response.choices[0].message.content
+    # ユーザーのメッセージとボットの応答を履歴に追加
+    chat_histories[user_id].append({"role": "user", "content": user_msg})
+    chat_histories[user_id].append({"role": "assistant", "content": bot_response})
+    return bot_response
 
 # -- 署名 -------------------------------------------------------------
+import hashlib # hashlib をインポート
+import hmac    # hmac をインポート
+import base64  # base64 をインポート
 def verify_signature(channel_secret: str, body: bytes, signature: str) -> bool:
     mac = hmac.new(channel_secret.encode(), body, hashlib.sha256).digest()
     return hmac.compare_digest(base64.b64encode(mac), signature.encode())
