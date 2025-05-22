@@ -13,7 +13,13 @@ client = AsyncOpenAI()
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
-cfg = Configuration(access_token=os.getenv("LINE_ACCESS_TOKEN"))
+line_access_token = os.getenv("LINE_ACCESS_TOKEN")
+if line_access_token is None:
+    raise ValueError(
+        "The LINE_ACCESS_TOKEN environment variable is not set. "
+        "Please set this variable to your LINE channel access token."
+    )
+cfg = Configuration(access_token=line_access_token)
 
 # -- LINE -------------------------------------------------------------
 async def show_loading(chat_id: str, seconds: int = 30):
