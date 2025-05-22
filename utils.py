@@ -3,7 +3,7 @@ from linebot.v3.messaging import (
     ApiClient, Configuration, MessagingApi,
     ReplyMessageRequest, PushMessageRequest, TextMessage
 )
-from linebot.v3.exceptions import ApiException
+from linebot.v3.messaging.exceptions import ApiException
 from dotenv import load_dotenv
 
 load_dotenv()
