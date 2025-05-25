@@ -1,0 +1,15 @@
+from utils import load_system_prompt_for_token, get_access_token_key
+
+print('=== アクセストークンキー ===')
+print(get_access_token_key())
+print()
+print('=== システムプロンプト全体 ===')
+print(load_system_prompt_for_token())
+print()
+print('=== GPTに送られるメッセージ構造例 ===')
+print('[')
+print('  {"role": "system", "content": "[上記のシステムプロンプト]"},')
+print('  {"role": "user", "content": "前回のユーザー発言"},')
+print('  {"role": "assistant", "content": "前回のボット応答"},')
+print('  {"role": "user", "content": "今回のユーザー発言"}')
+print(']')
