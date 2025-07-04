@@ -30,3 +30,9 @@ To run this project, you need to set up the following environment variables.
     ```
     OPENAI_MODEL=gpt-4
     ```
+
+*   **`GAS_LOG_URL`** (Optional): URL of your Google Apps Script endpoint to store chat logs.
+    Set it in your `.env` file as:
+    ```
+    GAS_LOG_URL=https://script.google.com/your-script-url
+    ```

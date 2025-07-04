@@ -1,6 +1,11 @@
 from fastapi import FastAPI, Request, BackgroundTasks, HTTPException
 from utils import (
-    verify_signature, show_loading, call_gpt_block, reply_or_push, os
+    verify_signature,
+    show_loading,
+    call_gpt_block,
+    reply_or_push,
+    log_to_gas,
+    os,
 )
 
 app = FastAPI()
@@ -25,10 +30,13 @@ async def webhook(req: Request, bg: BackgroundTasks):
         # 1) ローディング開始（非同期）
         bg.add_task(show_loading, uid, 60)
 
-        # 2) GPT 呼び出し & 返信 / プッシュ
+        message_id = event["message"]["id"]
+
+        # 2) GPT 呼び出し & 返信 / プッシュ & GAS ログ
         async def async_flow():
-            answer = await call_gpt_block(uid, text) # uid を call_gpt_block に渡す
+            answer = await call_gpt_block(uid, text)  # uid を call_gpt_block に渡す
             await reply_or_push(uid, token, answer)
+            await log_to_gas(message_id, text, answer)
 
         bg.add_task(async_flow)
 
