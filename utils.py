@@ -92,6 +92,28 @@ async def reply_or_push(user_id: str, reply_token: str, text: str):
             else:
                 raise
 
+# -- GAS ---------------------------------------------------------------
+async def log_to_gas(message_id: str, question: str, response: str, sheet_name: str | None = None):
+    """Send chat logs to Google Apps Script if GAS_LOG_URL is set."""
+    gas_url = os.getenv("GAS_LOG_URL")
+    if not gas_url:
+        return
+
+    payload = {
+        "messageId": message_id,
+        "question": question,
+        "response": response,
+    }
+    if sheet_name:
+        payload["sheetName"] = sheet_name
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(gas_url, json=payload)
+    except Exception as e:
+        # ログ送信失敗時はエラーメッセージを表示するが処理は継続
+        print(f"GAS logging failed: {e}")
+
 # -- GPT --------------------------------------------------------------
 async def call_gpt_stream(user_id: str, user_msg: str) -> str:
     """OpenAI ChatCompletion をストリーム受信して結合（システムプロンプト対応）"""
