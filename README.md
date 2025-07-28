@@ -36,3 +36,15 @@ To run this project, you need to set up the following environment variables.
     ```
     GAS_LOG_URL=https://script.google.com/your-script-url
     ```
+
+*   **`TWILIO_ACCOUNT_SID`**, **`TWILIO_AUTH_TOKEN`**, **`TWILIO_WHATSAPP_NUMBER`** (Optional): Credentials for sending WhatsApp messages via Twilio.
+    Example configuration:
+    ```
+    TWILIO_ACCOUNT_SID=your_account_sid
+    TWILIO_AUTH_TOKEN=your_auth_token
+    TWILIO_WHATSAPP_NUMBER=+1234567890
+    ```
+
+### WhatsApp Endpoint
+
+The `/whatsapp` endpoint allows this bot to handle messages from a Twilio WhatsApp number. Configure the above Twilio environment variables and set the webhook URL in your Twilio console to point to `/whatsapp`.
