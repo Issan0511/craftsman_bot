@@ -5,6 +5,7 @@ from utils import (
     call_gpt_block,
     reply_or_push,
     log_to_gas,
+    send_whatsapp_message,
     os,
 )
 
@@ -40,4 +41,20 @@ async def webhook(req: Request, bg: BackgroundTasks):
 
         bg.add_task(async_flow)
 
+    return "ok"
+
+
+@app.post("/whatsapp")
+async def whatsapp(req: Request, bg: BackgroundTasks):
+    data = await req.form()
+    from_number = data.get("From")
+    text = data.get("Body")
+    if not from_number or not text:
+        raise HTTPException(status_code=400, detail="Invalid request")
+
+    async def async_flow():
+        answer = await call_gpt_block(from_number, text)
+        await send_whatsapp_message(from_number, answer)
+
+    bg.add_task(async_flow)
     return "ok"

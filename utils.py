@@ -160,6 +160,23 @@ async def call_gpt_block(user_id: str, user_msg: str) -> str:
     chat_histories[user_id].append({"role": "assistant", "content": bot_response})
     return bot_response
 
+# -- WhatsApp -----------------------------------------------------------
+async def send_whatsapp_message(to: str, body: str):
+    """Send a WhatsApp message via Twilio."""
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+    from_number = os.getenv("TWILIO_WHATSAPP_NUMBER")
+    if not account_sid or not auth_token or not from_number:
+        raise ValueError("Twilio environment variables are not set")
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
+    data = {
+        "From": f"whatsapp:{from_number}",
+        "To": to,
+        "Body": body,
+    }
+    async with httpx.AsyncClient() as client:
+        await client.post(url, data=data, auth=(account_sid, auth_token))
+
 # -- 署名 -------------------------------------------------------------
 import hashlib # hashlib をインポート
 import hmac    # hmac をインポート
